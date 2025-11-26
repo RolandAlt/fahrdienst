@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Fahrdienst App (Supabase)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=USE_SUPABASE=true",
+        "--dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co",
+        "--dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk",
+        "--dart-define=SUPA_EMAIL=roland.alt@gmx.de",
+        "--dart-define=SUPA_PW=Subaybay66"
+      ]
+    }
+  ]
+}

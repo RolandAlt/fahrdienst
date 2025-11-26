@@ -1,0 +1,20 @@
+# Keep line endings consistent and avoid patch failures
+*.dart text eol=lf
+*.yaml text eol=lf
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+
+# Common text files
+*.md   text eol=lf
+*.json text eol=lf
+
+# Never alter binaries
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ttf  binary
+*.otf  binary
+*.ico  binary

@@ -1,0 +1,414 @@
+Backup:
+aus stammdaten_app Verzeichnis:
+dart run tools/backup.dart
+
+Sonst:
+flutter pub run tools/backup.dart
+
+
+oder das PSI in der Konsole aufrufen: (alles kopieren und ausführen 
+backup_fahrdienst.ps1
+
+flutter build windows --release `
+  --dart-define=USE_SUPABASE=true `
+  --dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co `
+  --dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk `
+  --dart-define=SUPA_EMAIL=roland.alt@gmx.de `
+  --dart-define=SUPA_PW=Subaybay66
+
+
+
+
+flutter build apk --release `
+  --dart-define=USE_SUPABASE=true `
+  --dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co `
+  --dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk `
+  --dart-define=SUPA_EMAIL=roland.alt@gmx.de `
+  --dart-define=SUPA_PW=Subaybay66
+
+
+flutter build apk --release --dart-define=USE_SUPABASE=true --dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co --dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk --dart-define=SUPA_EMAIL=roland.alt@gmx.de --dart-define=Subaybay66
+
+
+Flutter clean ersetzten:
+rd /s /q build
+rd /s /q .dart_tool
+rd /s /q .idea
+rd /s /q .gradle
+
+flutter pub get
+
+
+
+flutter clean
+flutter pub get
+flutter run -d LCL7N19214001430
+
+flutter build apk --release
+
+
+
+Keystone:
+1) Keystore anlegen (einmalig)
+Öffne ein Terminal im Projektordner und erstelle einen privaten Schlüssel:
+
+# Ordner für Keystores (frei wählbar)
+mkdir -p ~/.keystores
+
+# Keystore erzeugen (Alias und Passwörter merken!)
+keytool -genkeypair \
+  -v -keystore ~/.keystores/stammdaten.jks \
+  -alias stammdaten \
+  -keyalg RSA -keysize 2048 -validity 10000
+
+
+Key Properties anlegen:
+Datei: android/key.properties
+
+storePassword=DEIN_KEYSTORE_PASSWORT
+keyPassword=DEIN_KEY_PASSWORT
+keyAlias=stammdaten
+storeFile=/home/DEIN_NAME/.keystores/stammdaten.jks
+
+3) Signatur in Gradle aktivieren
+Datei: android/app/build.gradle (Groovy – Standard bei Flutter)
+Füge oben hinzu (ganz am Anfang der Datei, unter plugins {} oder direkt nach den imports):
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+
+
+4) (Optional) App-Namen & Paketnamen setzen
+
+App-Name (Anzeige unter dem Icon):
+android/app/src/main/AndroidManifest.xml → im <application ... android:label="Stammdaten Fahrdienst">
+
+Paketname (technischer Name):
+In android/app/build.gradle unter defaultConfig { applicationId "de.rolandalt.stammdaten" }
+(Wenn du ihn änderst, musst du ggf. den Java/Kotlin-Package-Pfad refactoren; gern helfe ich dir dabei.)
+
+
+5) Release-APK bauen
+Vorher git vorbereten:
+git apply --ignore-whitespace --reject .\main_fix_map_icon_clean.patch
+git add lib\main.dart
+git commit -m "ui: show search icon immediately in Map mode (keyed TextField) + clean toggleMapModeFromIcon"
+
+
+
+flutter clean
+flutter pub get
+flutter build apk --release 
+
+Ergebnis:
+build/app/outputs/flutter-apk/app-release.apk
+
+6) (Optional) APK gleich umbenennen
+
+Einfach nach dem Build umkopieren:
+
+# macOS/Linux
+cp build/app/outputs/flutter-apk/app-release.apk StammdatenApp-1.0.0.apk
+
+# Windows PowerShell
+Copy-Item build\app\outputs\flutter-apk\app-release.apk StammdatenApp-1.0.0.apk
+
+7) APK prüfen & installieren
+
+Signatur prüfen (optional):
+
+# Pfad zu apksigner je nach Android SDK:
+apksigner verify --print-certs StammdatenApp-1.0.0.apk
+
+Per ADB installieren:
+
+adb install -r StammdatenApp-1.0.0.apk
+
+Oder die Datei aufs Handy kopieren (USB/Cloud/WhatsApp), dort öffnen → installieren.
+
+Hier ist die vollständige Ergänzung für deine pubspec.yaml, um den festen App-Namen
+„Stammdaten Fahrdienst“ und ein eigenes App-Icon dauerhaft einzubinden.
+Ich erkläre dir genau, wo du was einfügst 👇
+🧩 1. App-Namen setzen
+
+Im oberen Teil der android/app/src/main/AndroidManifest.xml:
+
+<application
+    android:name="${applicationName}"
+    android:label="Stammdaten Fahrdienst"
+    android:icon="@mipmap/launcher_icon">
+
+🖼 2. Icon mit flutter_launcher_icons einrichten
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+
+🔹 Du kannst natürlich dein eigenes Bild verwenden — z. B. ein quadratisches PNG mit mindestens 512 × 512 px.
+🔹 Lege es unter assets/icon/ ab, z. B.:
+assets/
+└── icon/
+    ├── icon.png
+    └── icon_foreground.png
+
+⚙️ 3. Einmalig ausführen
+
+Wenn du dein Icon vorbereitet hast:
+flutter pub get
+flutter pub run flutter_launcher_icons
+
+✅ 4. Danach Build durchführen
+
+Wenn alles passt:
+flutter build apk --release
+Ergebnis:
+build/app/outputs/flutter-apk/app-release.apk
+
+
+Öffne deine pubspec.yaml und ergänze unten diesen Block (achte auf die Einrückung):
+
+So legst du key.properties an (Windows) (..\Android\
+
+Keystore erzeugen (falls noch nicht gemacht): im Editor
+storePassword=Subaybay66
+keyPassword=Subaybay66
+   # (gleich wie oben, wenn du Enter gedrückt hast)
+keyAlias=stammdaten
+storeFile=C:\\Users\\Roland\\.keystores\\stammdaten.jks
+
+Release und Versions Nummer: 
+flutter build apk --release --build-name 1.1.0 --build-number 2
+
+oder in bubspec.yaml
+
+📘 Versionsübersicht – Stammdaten Fahrdienst
+Version	Build-Nummer	Datum	Änderungen / Notizen
+1.0.0	1	11.10.2025	Erste stabile Version, Funktionsumfang vollständig, zentrierte Icons, Schnelltexte für SMS/WhatsApp, Google-Maps-Routing.
+1.0.1	2	11.10.2025	Funktionsfähge apk mit lokaler Daten Datei
+1.1.0	3	—	(zukünftiges Funktionsupdate – evtl. neues Layout oder Export-Funktion)
+
+
+Keystore: C:\Users\Roland\.keystores\stammdaten.jks
+App: Stammdaten Fahrdienst
+Keystore: C:\Users\Roland\.keystores\stammdaten.jks
+Alias: stammdaten
+SHA1: f3:1e:95:ab:af:8d:d7:0c:4b:4c:bf:36:b9:bb:51:b3:b5:fa:1d:c7
+SHA1: f31e95abaf8dd70c4b4cbf36b9bb51b3b5fa1dc7
+Passwort: Subaybay66
+Erstellt am: 11.10.2025
+
+
+
+Wenn ein Process offen ist:
+cd C:\FlutterProjekte\stammdaten_app
+cd android
+.\gradlew --stop
+adb kill-server
+cd ..
+
+taskkill /F /IM java.exe /T
+taskkill /F /IM gradle* /T
+
+# im Projektwurzelordner
+Remove-Item -Recurse -Force .\build
+Remove-Item -Recurse -Force .\.dart_tool
+Remove-Item -Recurse -Force .\android\app\build
+
+
+# Flutter ausführen 
+flutter clean
+flutter pub get
+flutter build apk --release
+
+
+
+# Umbenennen der App
+powershell -ExecutionPolicy Bypass -File .\rename-apk.ps1
+
+# Git erzeigen um Änderungen in Datei einzuspielen erzeugt Unterordner .git
+
+# Git Reset
+cd C:\FlutterProjekte\stammdaten_app
+git add .gitattributes
+git commit -m "chore: add .gitattributes for stable endings"
+git rm --cached -r .
+git reset --hard
+
+
+git apply --ignore-whitespace --reject .\main_git_test.patch
+git status
+git diff -- lib\main.dart
+
+git add lib\main.dart
+git commit -m "test: apply minimal patch banner to main.dart"
+
+
+# Normaler Ablauf:
+cd "C:\FlutterProjekte\stammdaten_app"
+git apply --ignore-whitespace --reject .\main_fix_iconmap.patch
+git diff -- lib\main.dart   # Kontrolle: oben muss jetzt die Lupe im Map-Modus erscheinen
+git add lib\main.dart
+git commit -m "ui: show search icon in Map mode; map icon in Search mode (+ tooltip)"
+
+
+Sicherheitsmodus:
+git apply --reject --unidiff-zero rename-sheets.patch
+git apply --check rename-sheets.patch
+
+
+Normaler Git aufruf:
+git init
+git add .
+git commit -m "baseline: aktueller Arbeitsstand"
+git apply --check rename-sheets-robust.patch
+git apply --whitespace=nowarn rename-sheets-robust.patch
+
+
+Diff prüfen:
+git diff -- lib/main.dart
+
+Änderung in Git hinzufügen:
+git add lib/main.dart
+git commit -m "rename sheets (Stammdaten→Klienten, Config→Einrichtung)"
+
+Prüfen, was Git kennt
+git log --oneline
+git status
+
+Dann initialen Grundstand committen:
+git add .
+git commit -m "baseline: aktueller Arbeitsstand (nur lib/, assets/, patches/, tools/)"
+
+Dateien auflisten
+git ls-files
+
+eine Patch prüfen:
+git apply --check .\patches\rename-sheets-robust.patch
+
+anwenden:
+git apply --reject --whitespace=nowarn .\patches\rename-sheets-robust.patch
+
+Diff prüfen:
+git diff -- lib/main.dart
+
+committen:
+git add lib/main.dart
+git commit -m "rename sheets: Stammdaten→Klienten, Config→Einrichtung (nur 2 Zeilen)"
+
+
+Kompletter Aufruf Git zum hinzufügen eines Patches:
+git apply --check .\patches\<datei>.patch
+git apply --reject --whitespace=nowarn .\patches\<datei>.patch
+git diff -- lib\main.dart  # oder die betroffenen Dateien prüfen
+git add <betroffene Dateien>
+git commit -m "<kurze, präzise Nachricht>"
+
+
+
+Aufruf für rename-sheets-robust.patch
+# 1️⃣ Sicherheitshalber prüfen, dass du im richtigen Projektordner bist
+cd C:\FlutterProjekte\stammdaten_app
+
+# 2️⃣ Aktuellen Status anzeigen (sollte clean sein)
+git status
+
+# 3️⃣ Patch-Trockenlauf (nur prüfen, nichts ändern)
+git apply --check .\patches\rename-sheets-robust.patch
+
+# 👉 Wenn hier KEINE Ausgabe kommt, ist alles perfekt vorbereitet.
+
+# 4️⃣ Patch wirklich anwenden (sicherer Modus – keine Zusatzänderungen möglich)
+git apply --reject --whitespace=nowarn .\patches\rename-sheets-robust.patch
+
+# 5️⃣ Kontrolle – es dürfen nur 2 Zeilen geändert sein
+git diff -- lib\main.dart
+
+# 6️⃣ Änderung übernehmen und committen
+git add lib\main.dart
+git commit -m "rename sheets: Stammdaten→Klienten, Config→Einrichtung (nur 2 Zeilen)"
+
+# 7️⃣ Kontrolle der Commits
+git log --oneline
+
+----------------
+Wenn alles ok dann flutter ausführen
+
+flutter clean
+flutter pub get
+flutter build apk --release
+
+----------------
+
+bei Problemen:
+dart format lib/main.dart
+flutter analyze
+
+
+Workflow:# Neuen Patch ablegen
+.\patches\<neuer_patch>.patch
+
+# Prüfen
+git apply --check .\patches\<neuer_patch>.patch
+
+# Anwenden
+git apply --reject --whitespace=nowarn .\patches\<neuer_patch>.patch
+
+# Kontrollieren (nur erwartete Dateien)
+git diff -- lib\main.dart
+
+# Committen
+git add lib\main.dart
+git commit -m "<kurze Beschreibung>"
+
+
+
+
+
+
+
+git init
+git add .
+git commit -m "Erste Sicherung vor Patch"
+
+git apply --whitespace=nowarn main.patch
+
+
+# git Versionsveraltung löschen 
+git restore .
+git clean -fd
+git reset --hard
+# Prüfen, ob Änderung angekommen ist
+git diff -- lib\main.dart
+# Änderung sichern
+git add lib\main.dart
+git commit -m "Patch add_last_editor_device applied"
+
+
+
+
+
+SupaBase aufruf:
+flutter run `
+  --dart-define=USE_SUPABASE=true `
+  --dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co `
+  --dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk ` 
+  --dart-define=SUPA_EMAIL=roland.alt@gmx.de `
+  --dart-define=SUPA_PW=Subaybay66
+
+
+flutter build apk --release `
+  --dart-define=USE_SUPABASE=true `
+  --dart-define=SUPABASE_URL=https://fckacniifbgbtcwyfnta.supabase.co `
+  --dart-define=SUPABASE_ANON=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZja2FjbmlpZmJnYnRjd3lmbnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5ODc3NzMsImV4cCI6MjA3NzU2Mzc3M30.hTJOkXOMvVCpdjo03U46Ps9NFGyzbskdt0n9ngiyYEk `
+  --dart-define=SUPA_EMAIL=roland.alt@gmx.de `
+  --dart-define=SUPA_PW=Subaybay66

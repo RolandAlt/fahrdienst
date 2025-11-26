@@ -1,0 +1,349 @@
+[1mdiff --git a/lib/main.dart b/lib/main.dart[m
+[1mindex 6499b30..4d19cc8 100644[m
+[1m--- a/lib/main.dart[m
+[1m+++ b/lib/main.dart[m
+[36m@@ -54,10 +54,10 @@[m [mimport 'package:speech_to_text/speech_recognition_result.dart' as stt_sr;[m
+ class _Config {[m
+   static const defaultCountryCode = '49';[m
+   static const spreadsheetId = '1f94whr7-En3IcbLRw71x-tRKrMqBlpl51du4M8P1yWc';[m
+[31m-  static const sheetName = 'Stammdaten';[m
+[32m+[m[32m  static const sheetName = 'Klienten';[m
+ [m
+   // Config-Sheet-Tab[m
+[31m-  static const configSheetTitle = 'Config';[m
+[32m+[m[32m  static const configSheetTitle = 'Einrichtung';[m
+   static const serviceKeyAsset = 'assets/service_key.json';[m
+ [m
+   // Lokaler Cache[m
+[36m@@ -1442,8 +1442,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+ [m
+         // Falls wir im Map-Modus sind: Route neu bauen (Tokens bleiben wie eingegeben)[m
+         if (_mapMode) {[m
+[31m-          final addresses = _sichtbar[m
+[31m-              .map((p) => p.adresse.trim())[m
+[32m+[m[32m          final addresses = _sichtbar.map((p) => _formatMapAddress(p))[m
+               .where((a) => a.isNotEmpty)[m
+               .toList();[m
+           _routeUrl = _buildGoogleMapsRoute(addresses, dedup: false);[m
+[36m@@ -2062,7 +2061,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+         _sichtbar = picked;[m
+         _mapMode = true;[m
+         final addresses = picked[m
+[31m-            .map((p) => p.adresse.trim())[m
+[32m+[m[32m            .map((p) => _formatMapAddress(p))[m
+             .where((a) => a.isNotEmpty)[m
+             .toList();[m
+         _routeUrl = _buildGoogleMapsRoute([m
+[36m@@ -2147,7 +2146,19 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+     });[m
+   }[m
+ [m
+[31m-  // ----------- Google Maps Route-Builder ----------[m
+[32m+[m[41m  [m
+[32m+[m[32m  // ---- Map-Address Formatting (Ortsteil + Ort) ----[m
+[32m+[m[32m  String _formatMapAddress(Person p) {[m
+[32m+[m[32m    final parts = <String>[];[m
+[32m+[m[32m    final addr = (p.adresse).trim();[m
+[32m+[m[32m    if (addr.isNotEmpty) parts.add(addr);[m
+[32m+[m[32m    final ost = (p.ortsteil).trim();[m
+[32m+[m[32m    if (ost.isNotEmpty) parts.add(ost);[m
+[32m+[m[32m    // Standard-Ort[m
+[32m+[m[32m    parts.add('Schotten');[m
+[32m+[m[32m    return parts.join(', ');[m
+[32m+[m[32m  }[m
+[32m+[m[32m// ----------- Google Maps Route-Builder ----------[m
+   String? _buildGoogleMapsRoute(List<String> addresses, {bool dedup = true}) {[m
+     if (addresses.isEmpty) return null;[m
+ [m
+[36m@@ -2605,7 +2616,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+ [m
+     switch (sel) {[m
+       case 'nav':[m
+[31m-        if (hasAddr) await _openMaps(p.adresse.trim());[m
+[32m+[m[32m        if (hasAddr) await _openMaps(_formatMapAddress(p));[m
+         break;[m
+       case 'call':[m
+         if (isCentral) {[m
+[36m@@ -2780,11 +2791,43 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+ [m
+   Future<void> _stopListening() async {[m
+     try {[m
+[32m+[m
+[32m+[m[32m  // Add new Person from Route/Wrapper[m
+[32m+[m
+       await _speech.stop();[m
+     } catch (_) {}[m
+     if (mounted) setState(() => _listening = false);[m
+   }[m
+ [m
+[32m+[m[32m  void _addPerson() async {[m
+[32m+[m[32m    final p = Person([m
+[32m+[m[32m      rowId: null,[m
+[32m+[m[32m      nr: '',[m
+[32m+[m[32m      name: '',[m
+[32m+[m[32m      vorname: '',[m
+[32m+[m[32m      adresse: '',[m
+[32m+[m[32m      ortsteil: '',[m
+[32m+[m[32m      telefon: '',[m
+[32m+[m[32m      angehoerige: '',[m
+[32m+[m[32m      angeTel: '',[m
+[32m+[m[32m      betreuer: '',[m
+[32m+[m[32m      betreuerTel: '',[m
+[32m+[m[32m      rs: '',[m
+[32m+[m[32m      besonderheiten: '',[m
+[32m+[m[32m      infosWohn: '',[m
+[32m+[m[32m      tagespflege: '',[m
+[32m+[m[32m      hilfeBei: '',[m
+[32m+[m[32m      schluessel: '',[m
+[32m+[m[32m      klingel: '',[m
+[32m+[m[32m      sonstiges: '',[m
+[32m+[m[32m      updatedAt: null,[m
+[32m+[m[32m      lastEditor: null,[m
+[32m+[m[32m      lastEditorDevice: null,[m
+[32m+[m[32m      lastEditorDeviceId: null,[m
+[32m+[m[32m    );[m
+[32m+[m[32m    await _editPerson(p);[m
+[32m+[m[32m  }[m
+[32m+[m
+   // ---------- CRUD Dialoge (unverändert mit robustem Flow) ----------[m
+   Future<void> _editPerson(Person p, {int? index}) async {[m
+     _editOpen = true;[m
+[36m@@ -2799,8 +2842,8 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+         canDelete: index != null,[m
+         canEdit: _online,[m
+       ),[m
+[32m+[m[41m    [m
+     );[m
+[31m-[m
+     if (res == 'save') {[m
+       try {[m
+         if ((p.rowId ?? '').isEmpty && (p.nr ?? '').isEmpty) {[m
+[36m@@ -2810,13 +2853,22 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+           await _pushUpdate(p);[m
+         }[m
+         await _pullFromSheet();[m
+[31m-      [m
+[31m-        _applyFilterEnhanced();[m
+[31m-        if (mounted) setState(() {});[m
+[31m-} catch (e) {[m
+[32m+[m
+[32m+[m[32m        // Nach Speichern: zu neuem Datensatz scrollen[m
+[32m+[m[32m        if ((p.rowId ?? '').isNotEmpty) {[m
+[32m+[m[32m          WidgetsBinding.instance.addPostFrameCallback((_) {[m
+[32m+[m[32m            _scrollToRowId(p.rowId!);[m
+[32m+[m[32m          });[m
+[32m+[m[32m        }[m
+[32m+[m[32m      } catch (e) {[m
+         _toast('Speichern fehlgeschlagen.');[m
+       }[m
+     } else if (res == 'delete') {[m
+[32m+[m[32m      // Optimistisch sofort lokal entfernen[m
+[32m+[m[32m      setState(() {[m
+[32m+[m[32m        _alle.removeWhere((x) => identical(x, p) || x.rowId == p.rowId);[m
+[32m+[m[32m        _sichtbar.removeWhere((x) => identical(x, p) || x.rowId == p.rowId);[m
+[32m+[m[32m      });[m
+       try {[m
+         if ((p.rowId ?? '').isNotEmpty) {[m
+           await _pushDelete(p);[m
+[36m@@ -2828,67 +2880,6 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+         _toast('Löschen fehlgeschlagen.');[m
+       }[m
+     }[m
+[31m-[m
+[31m-    _editOpen = false;[m
+[31m-    _startPolling();[m
+[31m-  }[m
+[31m-[m
+[31m-  Future<void> _addPerson() async {[m
+[31m-    if (!_online) {[m
+[31m-      _toast('Offline – Anlegen gesperrt');[m
+[31m-      return;[m
+[31m-    }[m
+[31m-    final p = Person(name: '', vorname: '', adresse: '');[m
+[31m-    _editOpen = true;[m
+[31m-    _pollTimer?.cancel();[m
+[31m-[m
+[31m-    final res = await showDialog<String>([m
+[31m-      context: context,[m
+[31m-      barrierDismissible: false,[m
+[31m-      builder: (ctx) => _EditDialog([m
+[31m-        person: p,[m
+[31m-        onCall: _choosePhoneAction,[m
+[31m-        canDelete: false,[m
+[31m-        canEdit: _online,[m
+[31m-      ),[m
+[31m-    );[m
+[31m-[m
+[31m-    if (res == 'save') {[m
+[31m-      try {[m
+[31m-        final newId = await _pushNew(p);[m
+[31m-        p.rowId = newId;[m
+[31m-        await _pullFromSheet();[m
+[31m-[m
+[31m-        [m
+[31m-        // Nach Speichern Liste aktualisieren (für Wechsel auf Klienten-Tab)[m
+[31m-        _applyFilterEnhanced();[m
+[31m-        if (mounted) setState(() {});[m
+[31m-// Nach Speichern ggf. zum Datensatz scrollen[m
+[31m-        if ((p.rowId ?? '').isNotEmpty) {[m
+[31m-          WidgetsBinding.instance.addPostFrameCallback((_) {[m
+[31m-            _scrollToRowId(p.rowId!);[m
+[31m-          });[m
+[31m-        }[m
+[31m-[m
+[31m-        if (res == 'save') {[m
+[31m-          try {[m
+[31m-            final newId = await _pushNew(p);[m
+[31m-            p.rowId = newId;[m
+[31m-            await _pullFromSheet();[m
+[31m-[m
+[31m-            if ((p.rowId ?? '').isNotEmpty) {[m
+[31m-              WidgetsBinding.instance.addPostFrameCallback((_) {[m
+[31m-                _scrollToRowId(p.rowId!);[m
+[31m-              });[m
+[31m-            }[m
+[31m-          } catch (e) {[m
+[31m-            _toast('Speichern fehlgeschlagen.');[m
+[31m-          }[m
+[31m-        }[m
+[31m-      } catch (e) {[m
+[31m-        _toast('Speichern fehlgeschlagen.');[m
+[31m-      }[m
+[31m-    }[m
+     _editOpen = false;[m
+     _startPolling();[m
+   }[m
+[36m@@ -2975,8 +2966,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+       Future.microtask(() { try { AppBus.infoRev.value++; } catch (_) {} });[m
+ [m
+       if (_mapMode) {[m
+[31m-        final addresses = _sichtbar[m
+[31m-            .map((p) => p.adresse.trim())[m
+[32m+[m[32m        final addresses = _sichtbar.map((p) => _formatMapAddress(p))[m
+             .where((a) => a.isNotEmpty)[m
+             .toList();[m
+         _routeUrl = _buildGoogleMapsRoute(addresses, dedup: false);[m
+[36m@@ -3119,7 +3109,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+ [m
+                                 // Optional: Route-URL live updaten[m
+                                 final addresses = _sichtbar[m
+[31m-                                    .map((x) => x.adresse.trim())[m
+[32m+[m[32m                                    .map((x) => _formatMapAddress(x))[m
+                                     .where((a) => a.isNotEmpty)[m
+                                     .toList();[m
+                                 _routeUrl = _buildGoogleMapsRoute([m
+[36m@@ -3162,13 +3152,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                       width: 40,[m
+                                       height: 64,[m
+                                       child: Center([m
+[31m-                                        child:[m
+[31m-                                            ReorderableDelayedDragStartListener([m
+[31m-                                              index: i,[m
+[31m-                                              child: const Icon([m
+[31m-                                                Icons.drag_handle,[m
+[31m-                                              ),[m
+[31m-                                            ),[m
+[32m+[m[32m                                        child: (isCentral ? const Icon(Icons.apartment, size: 22) : const Icon(Icons.person_outline, size: 22)),[m
+                                       ),[m
+                                     ),[m
+ [m
+[36m@@ -3183,7 +3167,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                             _editPerson(p, index: i);[m
+                                           }[m
+                                         },[m
+[31m-                                        onLongPress: () => _showItemMenu(p),[m
+[32m+[m[32m                                        // onLongPress removed (was: _showItemMenu)[m
+                                         child: Padding([m
+                                           padding: const EdgeInsets.symmetric([m
+                                             horizontal: 8,[m
+[36m@@ -3199,16 +3183,14 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                                           ? p.name[m
+                                                           : 'Zentrale')[m
+                                                     : titleText,[m
+[31m-                                                style: const TextStyle([m
+[31m-                                                  fontSize: 18,[m
+[32m+[m[32m                                                style: const TextStyle(fontSize: 17,[m
+                                                   fontWeight: FontWeight.w500,[m
+                                                 ),[m
+                                               ),[m
+                                               const SizedBox(height: 2),[m
+                                               Text([m
+                                                 subLine,[m
+[31m-                                                style: const TextStyle([m
+[31m-                                                  fontSize: 15,[m
+[32m+[m[32m                                                style: const TextStyle(fontSize: 14,[m
+                                                 ),[m
+                                               ),[m
+                                             ],[m
+[36m@@ -3309,7 +3291,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                               'Route (ab aktuellem Standort)',[m
+                                           onPressed: p.adresse.trim().isNotEmpty[m
+                                               ? () =>[m
+[31m-                                                    _openMaps(p.adresse.trim())[m
+[32m+[m[32m                                                    _openMaps(_formatMapAddress(p))[m
+                                               : null,[m
+                                           icon: Icon([m
+                                             Icons.directions,[m
+[36m@@ -3355,8 +3337,9 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                   setState(() {[m
+                                     final removed = _sichtbar.removeAt(i);[m
+                                     _removeOneMapTokenFor(removed);[m
+[32m+[m[32m                                    _rebuildMapTokensFromVisible();[m
+                                     final addresses = _sichtbar[m
+[31m-                                        .map((x) => x.adresse.trim())[m
+[32m+[m[32m                                        .map((x) => _formatMapAddress(x))[m
+                                         .where((a) => a.isNotEmpty)[m
+                                         .toList();[m
+                                     _routeUrl = _buildGoogleMapsRoute([m
+[36m@@ -3365,7 +3348,7 @@[m [mWidgetsBinding.instance.addObserver(this);[m
+                                     );[m
+                                   });[m
+                                 },[m
+[31m-                                child: row,[m
+[32m+[m[32m                                child: ReorderableDelayedDragStartListener(index: i, child: row),[m
+                               );[m
+                             },[m
+                           ),[m
+[36m@@ -3564,7 +3547,7 @@[m [mfinal baseSub = TextStyle([m
+                                   IconButton([m
+                                     tooltip: 'Route (ab aktuellem Standort)',[m
+                                     onPressed: hasAddr[m
+[31m-                                        ? () => _openMaps(p.adresse.trim())[m
+[32m+[m[32m                                        ? () => _openMaps(_formatMapAddress(p))[m
+                                         : null,[m
+                                     icon: Icon([m
+                                       Icons.directions,[m
+[36m@@ -3584,13 +3567,13 @@[m [mfinal baseSub = TextStyle([m
+                                     'Offline - Schreibgeschützt',[m
+                                   );[m
+                                 if (isCentral) {[m
+[31m-                                  if (hasAddr) _openMaps(p.adresse.trim());[m
+[32m+[m[32m                                  if (hasAddr) _openMaps(_formatMapAddress(p));[m
+                                   return;[m
+                                 }[m
+                                 final realIndex = _alle.indexOf(p);[m
+                                 _editPerson(p, index: realIndex);[m
+                               },[m
+[31m-                              onLongPress: () => _showItemMenu(p),[m
+[32m+[m[32m                              // onLongPress removed (was: _showItemMenu)[m
+                             );[m
+                           },[m
+                         )),[m
+[36m@@ -3789,6 +3772,17 @@[m [mclass _EditDialog extends StatefulWidget {[m
+ }[m
+ [m
+ class _EditDialogState extends State<_EditDialog> {[m
+[32m+[m[32m  // Helper: Adresse mit Ortsteil + Ort (Schotten) für Maps im Dialog[m
+[32m+[m[32m  String _formatMapAddressFromText(String adresse, String ortsteil) {[m
+[32m+[m[32m    final parts = <String>[];[m
+[32m+[m[32m    final a = adresse.trim();[m
+[32m+[m[32m    if (a.isNotEmpty) parts.add(a);[m
+[32m+[m[32m    final o = ortsteil.trim();[m
+[32m+[m[32m    if (o.isNotEmpty) parts.add(o);[m
+[32m+[m[32m    parts.add('Schotten');[m
+[32m+[m[32m    return parts.join(', ');[m
+[32m+[m[32m  }[m
+[32m+[m
+   late final TextEditingController nrCtrl;[m
+   late final TextEditingController nameCtrl;[m
+   late final TextEditingController vornameCtrl;[m

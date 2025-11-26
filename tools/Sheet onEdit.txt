@@ -1,0 +1,111 @@
+function onEdit(e) {
+  if (!e || !e.source || !e.range) return;
+
+  const sh = e.source.getActiveSheet();
+  const SHEETS = ['Einrichtungen', 'Klienten', 'Mitarbeiter', 'Tagesplan', 'Monatsplan'];
+  const sheetName = sh.getName();
+  if (!SHEETS.includes(sheetName)) return;
+
+  const startRow = e.range.getRow();
+  const numRows  = e.range.getNumRows();
+
+  // ---- Header & Helpers ----------------------------------------------------
+  const lastCol    = sh.getLastColumn();
+  const headersRaw = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  const normalize = (s) => String(s)
+    .replace(/\u00A0/g, ' ')     // NBSP -> Space
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const headersNorm = headersRaw.map(h => normalize(h));
+
+  const findColExact = (label) => {
+    const target = normalize(label);
+    const idx = headersNorm.findIndex(h => h === target);
+    return idx >= 0 ? idx + 1 : 0; // 1-based
+  };
+
+  const findColByCandidates = (cands) => {
+    const nc = cands.map(normalize);
+    for (let i = 0; i < headersNorm.length; i++) if (nc.includes(headersNorm[i])) return i + 1;
+    for (let i = 0; i < headersNorm.length; i++) if (nc.some(c => headersNorm[i].startsWith(c))) return i + 1;
+    return 0;
+  };
+
+  const isEmptyCell = (cell) => {
+    const v = cell.getValue();
+    return v === null || v === '' || (typeof v === 'string' && v.trim() === '');
+  };
+
+  const rowHasAnyData = (row, ignoreCols0Based = new Set()) => {
+    const vals = sh.getRange(row, 1, 1, lastCol).getValues()[0];
+    for (let i = 0; i < vals.length; i++) {
+      if (ignoreCols0Based.has(i)) continue;
+      if (String(vals[i]).trim() !== '') return true;
+    }
+    return false;
+  };
+
+  // Zielspalten ermitteln
+  const colRowId = findColByCandidates(['row_id','row id','rowid']);
+  const colFD    = sheetName === 'Klienten' ? findColExact('Fahrdienst') : 0;
+  const colRS    = sheetName === 'Klienten' ? findColByCandidates(['rs','rs (rollstuhl)','rollstuhl']) : 0;
+
+  // ---- 1) Auto-Defaults (Klienten): Fahrdienst/RS, egal wo editiert --------
+  if (sheetName === 'Klienten') {
+    for (let r = startRow; r < startRow + numRows; r++) {
+      if (r <= 1) continue; // Kopfzeile überspringen
+
+      // Nur setzen, wenn die Zeile wirklich schon Inhalt hat (irgendwo)
+      const ignoreForCheck = new Set([
+        (colRowId ? colRowId - 1 : -1),
+        (colFD    ? colFD    - 1 : -1),
+        (colRS    ? colRS    - 1 : -1),
+      ].filter(i => i >= 0));
+
+      if (!rowHasAnyData(r, ignoreForCheck)) continue;
+
+      if (colFD) {
+        const cellFD = sh.getRange(r, colFD);
+        if (isEmptyCell(cellFD)) cellFD.setValue('Ja');
+      }
+      if (colRS) {
+        const cellRS = sh.getRange(r, colRS);
+        if (isEmptyCell(cellRS)) cellRS.setValue('Nein');
+      }
+    }
+  }
+
+  // ---- 2) row_id-Vergabe (alle relevanten Blätter), egal wo editiert -------
+  // Gilt auch für 'Tagesplan' und 'Monatsplan'
+  if (colRowId) {
+    // aktuellen Maximalwert einmal ermitteln
+    const totalDataRows = Math.max(0, sh.getLastRow() - 1);
+    let maxId = 0;
+    if (totalDataRows > 0) {
+      const ids = sh.getRange(2, colRowId, totalDataRows).getValues().flat();
+      const nums = ids.map(v => Number(String(v).trim())).filter(Number.isFinite);
+      maxId = nums.length ? Math.max(...nums) : 0;
+    }
+
+    for (let r = startRow; r < startRow + numRows; r++) {
+      if (r <= 1) continue;
+      const idCell = sh.getRange(r, colRowId);
+      if (String(idCell.getValue()).trim() !== '') continue; // schon vorhanden
+
+      // Prüfen, ob in der Zeile „echte“ Daten stehen (row_id & optionale Felder ignorieren)
+      const ignoreCols = new Set([
+        colRowId - 1,
+        (colFD ? colFD - 1 : -1),
+        (colRS ? colRS - 1 : -1),
+      ].filter(i => i >= 0));
+
+      if (!rowHasAnyData(r, ignoreCols)) continue;
+
+      maxId += 1;
+      idCell.setValue(maxId);
+    }
+  }
+}

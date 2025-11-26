@@ -1,0 +1,7 @@
+=ARRAYFORMULA(
+  WENN(ZEILE(AB:AB)=1;"Anzeige";
+    WENN(LÄNGE(Z:Z)=0; ;
+      Z:Z & " - " & B:B & " " & C:C
+    )
+  )
+)

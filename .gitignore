@@ -1,0 +1,52 @@
+@"
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Web related
+**/node_modules/
+.firebase/
+!.gitkeep
+
+# IntelliJ related
+*.iml
+.idea/
+
+# VS Code related
+.vscode/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+
+# Android related
+android/.gradle/
+android/app/build/
+key.properties
+
+# iOS related
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.podspec
+ios/Podfile.lock
+ios/Pods/
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Windows related
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+
+# Linux related
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+
+# macOS related
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Exclude service key (your secret)
+assets/service_key.json
+"@ | Out-File .gitignore -Encoding utf8
+docs/assets/assets/service_key.json
