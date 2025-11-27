@@ -607,19 +607,19 @@ class _SupaMitarbeiterAdapter {
     return out; // << wichtig: immer return!
   }
 
-  // Eigenen Mitarbeiter (per Auth-UID) lesen – für
+   // Eigenen Mitarbeiter (per Auth-UID) lesen – für
   //   final n = await SupaAdapter.mitarbeiter.fetchOwnDisplayNameByAuthId();
   Future<String?> fetchOwnDisplayNameByAuthId() async {
     await AppAuth.ensureSignedIn();
 
-    // User-UID holen – robust für unterschiedliche Supabase SDKs
-    String? uid;
-    try {
-      final u = Supa.client.auth.currentUser;
-      uid = u?.id;
-    } catch (_) {
+    // Supabase-Client IMMER über supabase_flutter holen
+    final c = sb.Supabase.instance.client;
+
+    // User-UID holen – robust für unterschiedliche Supabase-SDKs
+    String? uid = c.auth.currentUser?.id;
+    if (uid == null || uid.isEmpty) {
       try {
-        final resp = await Supa.client.auth.getUser();
+        final resp = await c.auth.getUser();
         uid = resp.user?.id;
       } catch (_) {}
     }
@@ -629,19 +629,19 @@ class _SupaMitarbeiterAdapter {
       return null;
     }
 
-    final rows = await cli
+    // Mitarbeiter-Zeile zu dieser UID lesen
+    final List<dynamic> rows = await c
         .from('Mitarbeiter')
         .select('Name, Vorname')
         .eq('auth_user_id', uid)
         .limit(1);
 
-    final list = List<Map<String, dynamic>>.from((rows as List?) ?? const []);
-    if (list.isEmpty) {
+    if (rows.isEmpty) {
       debugPrint('[Mitarbeiter] kein Treffer für uid=$uid');
       return null;
     }
 
-    final r = list.first;
+    final r = Map<String, dynamic>.from(rows.first as Map);
     final n = '${r['Name'] ?? ''}'.trim();
     final v = '${r['Vorname'] ?? ''}'.trim();
     final full = [n, v].where((e) => e.isNotEmpty).join(' ').trim();
@@ -1560,7 +1560,6 @@ class _SupaTagesplanAdapter {
       await Supa.client.from('Tagesplan').delete().eq('row_id', id);
     }
   }
-
   // ==================== Tagesplan laden ====================
   Future<List<Map<String, dynamic>>> fetchDayPlan(
     DateTime date, {
@@ -1582,15 +1581,17 @@ class _SupaTagesplanAdapter {
     final sel =
         'row_id, "Klienten row_id", "$vehCol", "$ordCol", Bemerkung, Klienten (Name, Vorname)';
 
-    final raw = await Supa.client
+    // WICHTIG: immer den supabase_flutter-Client verwenden
+    final List<dynamic> raw = await client
         .from('Tagesplan')
         .select(sel)
-        .eq('Datum', iso) // falls deine Spalte anders heißt, gleiche hier an
+        .eq('Datum', iso) // falls deine Spalte anders heißt, hier anpassen
         .order('row_id', ascending: true);
 
     // Map in neutrales Format für main.dart
     final out = <Map<String, dynamic>>[];
-    for (final r in (raw as List)) {
+
+    for (final r in raw) {
       final m = Map<String, dynamic>.from(r as Map);
 
       final name = (m['Klienten']?['Name'] ?? '').toString().trim();
@@ -1602,8 +1603,8 @@ class _SupaTagesplanAdapter {
       out.add({
         'row_id': m['row_id'],
         'Klienten row_id': m['Klienten row_id'],
-        vehCol: m[vehCol], // <- EXACT
-        ordCol: m[ordCol], // <- EXACT
+        vehCol: m[vehCol], // <- EXAKT die Spaltennamen verwenden
+        ordCol: m[ordCol],
         'Bemerkung': m['Bemerkung'],
         '_display': disp ?? 'Klient ${m['Klienten row_id'] ?? ''}',
       });
